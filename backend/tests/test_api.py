@@ -11,10 +11,20 @@ def test_health_check():
     assert response.json() == {"status": "ok", "service": "nova-ai-api"}
 
 
+def test_chat_requires_authentication():
+    response = client.post(
+        "/v1/chat",
+        json={"messages": [{"role": "user", "content": "Hello"}]},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Authentication required"
+
+
 def test_chat_requires_provider_key(monkeypatch):
     import app.main as main
 
     monkeypatch.setattr(main, "OPENAI_API_KEY", "")
+    monkeypatch.setitem(main.app.dependency_overrides, main.get_current_user, lambda: {"id": "test-user"})
     response = client.post(
         "/v1/chat",
         json={"messages": [{"role": "user", "content": "Hello"}]},
