@@ -36,6 +36,12 @@ Do not commit real API keys to Git. Set secrets through the hosting provider's
 environment-variable or secret manager interface. Never place provider keys in
 the iOS app or in a public repository.
 
+The chat endpoint also requires a valid Supabase access token. Configure
+`SUPABASE_URL` and `SUPABASE_ANON_KEY` on the server. The API validates each
+bearer token against Supabase Auth (`/auth/v1/user`) before processing chat.
+The Supabase anon key is designed for client use, but this backend setting must
+still be configured server-side. Never use a Supabase service-role key here.
+
 ## Tests
 
 ```bash
