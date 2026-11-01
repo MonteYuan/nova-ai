@@ -26,6 +26,8 @@ final class APIClient {
     private init() {}
 
     func sendMessage(messages: [ChatMessage]) async throws -> String {
+        let accessToken = try await AuthManager.shared.validAccessToken()
+
         guard let url = URL(string: baseURL + "/v1/chat") else {
             throw APIError.invalidURL
         }
@@ -33,6 +35,7 @@ final class APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 60
 
         let payload = ChatRequest(messages: messages.map {
