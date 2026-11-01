@@ -1,14 +1,18 @@
 import os
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field, model_validator
 
-app = FastAPI(title="Nova AI API", version="0.2.0")
+app = FastAPI(title="Nova AI API", version="0.3.0")
+bearer_scheme = HTTPBearer(auto_error=False)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
 
 MAX_TOTAL_MESSAGE_CHARS = 24000
 MAX_COMPLETION_TOKENS = 1200
@@ -36,13 +40,46 @@ class ChatResponse(BaseModel):
     reply: str
 
 
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+):
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        raise HTTPException(status_code=503, detail="Authentication service is not configured")
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(
+                f"{SUPABASE_URL}/auth/v1/user",
+                headers={
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": f"Bearer {credentials.credentials}",
+                },
+            )
+            if response.status_code in (401, 403):
+                raise HTTPException(status_code=401, detail="Invalid or expired access token")
+            response.raise_for_status()
+            user = response.json()
+            if not isinstance(user, dict) or not user.get("id"):
+                raise HTTPException(status_code=401, detail="Invalid authentication response")
+            return {"id": str(user["id"])}
+    except HTTPException:
+        raise
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=503, detail="Authentication service unavailable") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail="Authentication service unavailable") from exc
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "nova-ai-api"}
 
 
 @app.post("/v1/chat", response_model=ChatResponse)
-async def chat(payload: ChatRequest):
+async def chat(payload: ChatRequest, current_user=Depends(get_current_user)):
     if not OPENAI_API_KEY or OPENAI_API_KEY == "replace_me":
         raise HTTPException(status_code=503, detail="AI provider is not configured")
 
