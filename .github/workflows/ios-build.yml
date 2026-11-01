@@ -33,5 +33,14 @@ jobs:
             -scheme NovaAI \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+      - name: Upload simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovaAI-iOS-Simulator
+          path: ios/build/DerivedData/Build/Products/Debug-iphonesimulator/NovaAI.app
+          if-no-files-found: error
+          retention-days: 7
