@@ -1,6 +1,11 @@
 name: NovaAI Unsigned Device IPA
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-unsigned-ipa.yml'
   workflow_dispatch:
 
 jobs:
