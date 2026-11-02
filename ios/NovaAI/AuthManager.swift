@@ -9,10 +9,10 @@ final class AuthManager: ObservableObject {
     @Published private(set) var isAuthenticated = false
     @Published private(set) var isLoading = false
 
-    // These are Supabase client settings. The anon/publishable key is designed
-    // for client use; never put the service-role key or an AI provider key here.
-    private let supabaseURL = "https://YOUR_PROJECT.supabase.co"
-    private let supabaseAnonKey = "YOUR_SUPABASE_ANON_KEY"
+    // Supabase publishable keys are intended for client-side use.
+    // Never put a Supabase secret/service-role key or an AI provider key here.
+    private let supabaseURL = "https://roczknzmeivxcsczvpw.supabase.co"
+    private let supabaseAnonKey = "sb_publishable_QN6oBOz0v7PpZxRbvsN3GQ_7W4QjqNq"
 
     private let accessTokenKey = "nova.supabase.access-token"
     private let refreshTokenKey = "nova.supabase.refresh-token"
@@ -43,11 +43,6 @@ final class AuthManager: ObservableObject {
     }
 
     func validAccessToken() async throws -> String {
-        guard !supabaseURL.contains("YOUR_PROJECT"),
-              !supabaseAnonKey.contains("YOUR_SUPABASE") else {
-            throw AuthError.notConfigured
-        }
-
         guard let token = Keychain.read(accessTokenKey) else {
             throw AuthError.sessionExpired
         }
@@ -57,12 +52,12 @@ final class AuthManager: ObservableObject {
             return token
         }
 
-        guard let refresh = Keychain.read(refreshTokenKey) else {
+        guard let refresh = Keychain.read(refreshTokenKey),
+              let url = URL(string: supabaseURL + "/auth/v1/token?grant_type=refresh_token") else {
             clearSession()
             throw AuthError.sessionExpired
         }
 
-        let url = URL(string: supabaseURL + "/auth/v1/token?grant_type=refresh_token")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -82,10 +77,6 @@ final class AuthManager: ObservableObject {
     }
 
     private func authenticate(path: String, email: String, password: String) async throws -> Bool {
-        guard !supabaseURL.contains("YOUR_PROJECT"),
-              !supabaseAnonKey.contains("YOUR_SUPABASE") else {
-            throw AuthError.notConfigured
-        }
         isLoading = true
         defer { isLoading = false }
 
@@ -158,7 +149,7 @@ enum AuthError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notConfigured: return "Supabase 尚未配置，请先设置项目 URL 和 anon key。"
+        case .notConfigured: return "Supabase 尚未配置，请先设置项目 URL 和 publishable key。"
         case .invalidConfiguration: return "Supabase 配置无效。"
         case .network: return "网络连接失败，请稍后重试。"
         case .sessionExpired: return "登录已过期，请重新登录。"
