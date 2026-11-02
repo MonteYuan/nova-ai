@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'ios/**'
+      - 'README.md'
       - '.github/workflows/ios-unsigned-ipa.yml'
   workflow_dispatch:
 
