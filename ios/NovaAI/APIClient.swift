@@ -20,8 +20,8 @@ enum APIError: Error {
 final class APIClient {
     static let shared = APIClient()
 
-    // Replace with your deployed HTTPS backend URL before device testing.
-    private let baseURL = "https://YOUR_BACKEND_DOMAIN"
+    // Deployed Nova AI backend.
+    private let baseURL = "https://nova-ai-backend-xtto.onrender.com"
 
     private init() {}
 
