@@ -11,7 +11,7 @@ final class AuthManager: ObservableObject {
 
     // Supabase publishable keys are intended for client-side use.
     // Never put a Supabase secret/service-role key or an AI provider key here.
-    private let supabaseURL = "https://roczknzmeivxcsczvpw.supabase.co"
+    private let supabaseURL = "https://rroczknzmeivxcsczvpw.supabase.co"
     private let supabaseAnonKey = "sb_publishable_QN6oBOz0v7PpZxRbvsN3GQ_7W4QjqNq"
 
     private let accessTokenKey = "nova.supabase.access-token"
